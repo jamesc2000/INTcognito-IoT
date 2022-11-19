@@ -1,6 +1,7 @@
 {
-    "configuration": "CPUFreq=240,FlashMode=qio,FlashFreq=80",
+    "configuration": "CPUFreq=240,FlashMode=dio,PartitionScheme=huge_app,FlashFreq=40,DebugLevel=verbose,EraseFlash=none",
     "board": "esp32:esp32:esp32cam",
     "port": "COM5",
-    "sketch": "INTcognito-IoT.ino"
+    "sketch": "INTcognito-IoT.ino",
+    "output": "../build"
 }
