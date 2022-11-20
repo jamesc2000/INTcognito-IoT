@@ -1,9 +1,9 @@
 #define BLYNK_PRINT Serial
 
 /* Fill-in your Template ID (only if using Blynk.Cloud) */
-#define BLYNK_TEMPLATE_ID "TMPLohv5UbVV"
-#define BLYNK_DEVICE_NAME "Test"
-#define BLYNK_AUTH_TOKEN "ni4uHKC-iMnNNLEq4aeQO0gDtsjpYzWq"
+#define BLYNK_TEMPLATE_ID "TMPLAvkRRT4G"
+#define BLYNK_DEVICE_NAME "Smart Door"
+#define BLYNK_AUTH_TOKEN "ZlR9h2z1uAlg2C4U6C1PxwW08nWFpXsC"
 
 #include <BlynkSimpleEsp32.h>
 #include <SPI.h>
@@ -16,7 +16,7 @@
 
 // You should get Auth Token in the Blynk App.
 // Go to the Project Settings (nut icon).
-char auth[] = "ni4uHKC-iMnNNLEq4aeQO0gDtsjpYzWq";
+char auth[] = "ZlR9h2z1uAlg2C4U6C1PxwW08nWFpXsC";
 
 const char* host = "esp32";
 char ssid[] = "HUAWEI-V4XU";
@@ -25,6 +25,8 @@ char pass[] = "Tataycruz";
 WebServer server(80);
 
 #include "otaLoginPage.h"
+
+bool isDoorOpen;
 
 BlynkTimer timer;
 
@@ -35,6 +37,13 @@ void myTimerEvent() {
   // You can send any value at any time.
   // Please don't send more that 10 values per second.
   Blynk.virtualWrite(V5, millis() / (1000));
+  if (isDoorOpen) {
+    Blynk.virtualWrite(V6, 1);
+    Blynk.virtualWrite(V7, 0);
+  } else {
+    Blynk.virtualWrite(V6, 0);
+    Blynk.virtualWrite(V7, 1);
+  }
 }
 
 // Pin Assignments
@@ -107,13 +116,14 @@ void setup() {
   });
   server.begin();
 
-  Blynk.config(auth);
-  Blynk.connect(30);
-  if (Blynk.connected()) {
-    Serial.println("Successfully connected to Blynk");
-  } else {
-    Serial.println("Blynk connection request failed");
-  }
+  Blynk.begin(auth, ssid, pass);
+  //Blynk.config(auth);
+  //Blynk.connect(30);
+  //if (Blynk.connected()) {
+  //  Serial.println("Successfully connected to Blynk");
+  //} else {
+  //  Serial.println("Blynk connection request failed");
+  //}
 
   // Setup a function to be called every second
   timer.setInterval(1000L, myTimerEvent);
@@ -122,15 +132,15 @@ void setup() {
 void loop() {
   server.handleClient();
   delay(1);
-  if (Blynk.connected()) {
-    Blynk.run();
-    timer.run(); // Initiates BlynkTimer
-  }
+  Blynk.run();
+  timer.run(); // Initiates BlynkTimer
 
   if (digitalRead(DOOR_SNS) == 1) {
     digitalWrite(INDICATOR_LED, LOW); // Inverted logic for indicator led gpio 33
+    isDoorOpen = true;
   } else {
     digitalWrite(INDICATOR_LED, HIGH);
+    isDoorOpen = false;
   }
   
   //Serial.println("Message: ");
