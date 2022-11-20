@@ -5,20 +5,20 @@
 #define BLYNK_DEVICE_NAME "Smart Door"
 #define BLYNK_AUTH_TOKEN "ZlR9h2z1uAlg2C4U6C1PxwW08nWFpXsC"
 
+#include <Arduino.h>
 #include <BlynkSimpleEsp32.h>
+#include <ESPmDNS.h>
 #include <SPI.h>
+#include <Update.h>
+#include <WebServer.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
-#include <WebServer.h>
-#include <ESPmDNS.h>
-#include <Update.h>
-#include <Arduino.h>
 
 // You should get Auth Token in the Blynk App.
 // Go to the Project Settings (nut icon).
 char auth[] = "ZlR9h2z1uAlg2C4U6C1PxwW08nWFpXsC";
 
-const char* host = "esp32";
+const char *host = "esp32";
 char ssid[] = "HUAWEI-V4XU";
 char pass[] = "Tataycruz";
 
@@ -54,7 +54,7 @@ void setup() {
   // PIN Modes
   pinMode(DOOR_SNS, INPUT);
   pinMode(INDICATOR_LED, OUTPUT);
-  
+
   Serial.begin(9600);
 
   // Connect to WiFi network
@@ -73,7 +73,7 @@ void setup() {
   Serial.println(WiFi.localIP());
 
   /*use mdns for host name resolution*/
-  if (!MDNS.begin(host)) { //http://esp32.local
+  if (!MDNS.begin(host)) { // http://esp32.local
     Serial.println("Error setting up MDNS responder!");
     while (1) {
       delay(1000);
@@ -90,41 +90,40 @@ void setup() {
     server.send(200, "text/html", serverIndex);
   });
   /*handling uploading firmware file */
-  server.on("/update", HTTP_POST, []() {
-    server.sendHeader("Connection", "close");
-    server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
-    ESP.restart();
-  }, []() {
-    HTTPUpload& upload = server.upload();
-    if (upload.status == UPLOAD_FILE_START) {
-      Serial.printf("Update: %s\n", upload.filename.c_str());
-      if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
-        Update.printError(Serial);
-      }
-    } else if (upload.status == UPLOAD_FILE_WRITE) {
-      /* flashing firmware to ESP*/
-      if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
-        Update.printError(Serial);
-      }
-    } else if (upload.status == UPLOAD_FILE_END) {
-      if (Update.end(true)) { //true to set the size to the current progress
-        Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
-      } else {
-        Update.printError(Serial);
-      }
-    }
-  });
+  server.on(
+      "/update", HTTP_POST,
+      []() {
+        server.sendHeader("Connection", "close");
+        server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+        ESP.restart();
+      },
+      []() {
+        HTTPUpload &upload = server.upload();
+        if (upload.status == UPLOAD_FILE_START) {
+          Serial.printf("Update: %s\n", upload.filename.c_str());
+          if (!Update.begin(
+                  UPDATE_SIZE_UNKNOWN)) { // start with max available size
+            Update.printError(Serial);
+          }
+        } else if (upload.status == UPLOAD_FILE_WRITE) {
+          /* flashing firmware to ESP*/
+          if (Update.write(upload.buf, upload.currentSize) !=
+              upload.currentSize) {
+            Update.printError(Serial);
+          }
+        } else if (upload.status == UPLOAD_FILE_END) {
+          if (Update.end(true)) { // true to set the size to the current
+                                  // progress
+            Serial.printf("Update Success: %u\nRebooting...\n",
+                          upload.totalSize);
+          } else {
+            Update.printError(Serial);
+          }
+        }
+      });
   server.begin();
 
   Blynk.begin(auth, ssid, pass);
-  //Blynk.config(auth);
-  //Blynk.connect(30);
-  //if (Blynk.connected()) {
-  //  Serial.println("Successfully connected to Blynk");
-  //} else {
-  //  Serial.println("Blynk connection request failed");
-  //}
-
   // Setup a function to be called every second
   timer.setInterval(1000L, myTimerEvent);
 }
@@ -142,27 +141,4 @@ void loop() {
     digitalWrite(INDICATOR_LED, HIGH);
     isDoorOpen = false;
   }
-  
-  //Serial.println("Message: ");
-  //Serial.println(Serial.readString());
-  // // Clears the trigPin condition
-  // digitalWrite(trigPin, LOW);
-  // delayMicroseconds(2);
-  // // Sets the trigPin HIGH (ACTIVE) for 10 microseconds
-  // digitalWrite(trigPin, HIGH);
-  // delayMicroseconds(10);
-  // digitalWrite(trigPin, LOW);
-  // // Reads the echoPin, returns the sound wave travel time in microseconds
-  // duration = pulseIn(echoPin, HIGH);
-  // // Calculating the distance
-  // distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
-  // // Displays the distance on the Serial Monitor
-  // Serial.print("Distance: ");
-  // Serial.print(distance);
-  // Serial.println(" cm");
 }
-
-
-// TODO:
-// Run the sensor at 3.3V
-// MEASURE FIRST THE ECHO PIN!! MAKE SURE IT DOESNT GO 5V
